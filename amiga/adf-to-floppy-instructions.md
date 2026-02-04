@@ -25,7 +25,7 @@ This document describes ONE way to transfer games from your PC to your Amiga 500
 3. And that's all the hardware prep you need
 
 ### Software setup - Amiga
-0. **The most important step**: Virus-check your Workbench 1.3 disk. You can do this via a variety of tools, including the Diskcheck function of XCopy. If your Workbench 1.3 disk has a virus in its boot sector, then so will every disk you write via this process. Your life will be a living hell. **Please don't skip this step.**
+0. **The most important step**: Virus-check your Workbench 1.3 and Transwarp disks. You can do this via a variety of tools, including the Diskcheck function of XCopy. If your Workbench 1.3 disk has a virus in its boot sector, then so will every disk you write via this process. Your life will be a living hell. **Please don't skip this step.**
 1. Boot Amiga from a clean Workbench 1.3 disk.
 2. Open Prefs
 3. Open Serial
@@ -56,3 +56,7 @@ This document describes ONE way to transfer games from your PC to your Amiga 500
 13. Your Amiga is now listening to the serial port, ready to capture anything that comes in and write it to the empty disk. Time to move to the PC side.
 
 ### Software setup - PC
+0. Install ADF Sender Terminal v1.5 r4 (Note: These instructions work with this particular version. I recommend you use the latest version and try to modify the rest of the steps if needed to fit the newer version)
+1. Go to Comm Port -> Properties and set these settings: ![Comm Port properties for ADF Sender Terminal](images/adf-sender-terminal-comm-port-properties.png)
+2. Click the red circle to make it green (open connection)
+3. Go to File -> Transmit file (binary) and select file to send (You should now see progress on both the PC and the Amiga sides)
