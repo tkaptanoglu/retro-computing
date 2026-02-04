@@ -5,16 +5,16 @@ This document describes ONE way to transfer games from your PC to your Amiga 500
 
 ### Hardware
 0. A working Amiga 500 :-)
-1. Some empty floppy disks for the Amiga to write to
+1. Some formatted, 3.5", 880KB floppy disks for the Amiga to write to
 2. A null modem cable -- it is also possible to use two cables, one to leave your PC via the USB port, and converter to convert that to connect to the serial port of your Amiga.
 3. A working PC :-)
 
 ### Software
 0. [Amiga] A working, virus-free Transwarp disk
 1. [Amiga] A working, virus-free Workbench 1.3 disk
-2. [Amiga] An XCopy disk or any virus checker so you cna virus-check your Workbench 1.3 disk
+2. [Amiga] An XCopy disk or any virus checker so you can virus-check your Workbench 1.3 disk
 3. [PC] ADF Sender Terminal
-4. [PC] Some ADF files -- you can find these online
+4. [PC] Some ADF files that you own licensed copies of
 
 ## Steps
 
@@ -37,7 +37,7 @@ This document describes ONE way to transfer games from your PC to your Amiga 500
     5. Stop bits: 1
     6. Parity: None
     7. Handshaking: RTS/CTS
-5. Selct OK
+5. Select OK
 6. Select Use or Save. Save writes the settings to the diskette permanently, so the floppy diskette has to be write-enabled. **Make sure you have another working copy of your Workbench disk before saving onto it.**
 7. Open Shell and move the Shell screen down a bit (you will see why in a second).
 8. Insert Transwarp disk
