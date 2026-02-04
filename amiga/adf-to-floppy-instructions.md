@@ -6,7 +6,7 @@ This document describes ONE way to transfer games from your PC to your Amiga 500
 ### Hardware
 0. A working Amiga 500 :-)
 1. Some formatted, 3.5", 880KB floppy disks for the Amiga to write to
-2. A null modem cable -- it is also possible to use two cables, one to leave your PC via the USB port, and converter to convert that to connect to the serial port of your Amiga.
+2. A null-modem cable (crossover serial cable). If you use a USB→serial adapter, make sure it supports true RS‑232 levels and hardware RTS/CTS flow control
 3. A working PC :-)
 
 ### Software
@@ -14,12 +14,14 @@ This document describes ONE way to transfer games from your PC to your Amiga 500
 1. [Amiga] A working, virus-free Workbench 1.3 disk
 2. [Amiga] An XCopy disk or any virus checker so you can virus-check your Workbench 1.3 disk
 3. [PC] ADF Sender Terminal
-4. [PC] Some ADF files that you own licensed copies of
+4. [PC] Some ADF files that you are legally allowed to use
 
 ## Steps
 
 ### Hardware setup
-0. Depending on what cables you found, you must now have one or a connected series of cables leading from your PC (in my case this is via the USB port) to the serial port of your PC.
+0. Connect a null-modem (crossover) serial cable between the Amiga's serial port and the PC (or to a USB→serial adapter connected to the PC)
+    1. If you only have a straight-through cable, it will not work unless one end or adapter performs null-modem crossover
+    2. If using a USB→serial adapter, verify the adapter supports RS‑232 voltage levels and hardware RTS/CTS. Cheap TTL-level adapters will not work reliably
 1. Turn on your Amiga
 2. Turn on your PC
 3. And that's all the hardware prep you need
