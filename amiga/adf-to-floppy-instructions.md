@@ -57,6 +57,10 @@ This document describes ONE way to transfer games from your PC to your Amiga 500
 
 ### Software setup - PC
 0. Install ADF Sender Terminal v1.5 r4 (Note: These instructions work with this particular version. I recommend you use the latest version and try to modify the rest of the steps if needed to fit the newer version)
-1. Go to Comm Port -> Properties and set these settings: ![Comm Port properties for ADF Sender Terminal](images/adf-sender-terminal-comm-port-properties.png)
-2. Click the red circle to make it green (open connection)
-3. Go to File -> Transmit file (binary) and select file to send (You should now see progress on both the PC and the Amiga sides)
+1. Open Device Manager and find which port your cable that goes to your Amiga is connected to (in my example below it is Com8)
+2. Go to Comm Port -> Properties
+    1. Set your Port setting to what you found in the earlier step (in this example it is Com8)
+    2. Set these settings:
+    ![Comm Port properties for ADF Sender Terminal](images/adf-sender-terminal-comm-port-properties.png)
+3. Click the red circle to make it green (open connection)
+4. Go to File -> Transmit file (binary) and select file to send (You should now see progress on both the PC and the Amiga sides)
