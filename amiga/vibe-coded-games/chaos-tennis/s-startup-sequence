@@ -1,0 +1,7 @@
+; CHAOS TENNIS auto-startup
+; This file is written into s:startup-sequence on the ADF.
+
+echo "Starting CHAOS TENNIS..."
+cd ""
+CHAOSTENNIS
+
