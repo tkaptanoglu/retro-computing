@@ -11,6 +11,12 @@
 #include <proto/graphics.h>
 #include <proto/intuition.h>
 
+LONG __stack = 32768;
+
+/* Fixed-point arithmetic (8-bit fractional) */
+#define FP_SHIFT 8
+#define FP_ONE   (1L << FP_SHIFT)
+
 /* Hardware registers for joystick reading */
 #define JOY0DAT   (*(volatile UWORD *)0xDFF00A)
 #define JOY1DAT   (*(volatile UWORD *)0xDFF00C)
@@ -150,6 +156,7 @@ draw_object(struct RastPort *rp, const struct ChaosObject *obj)
     default:               pen = 1;  break;
     }
 
+    SetAPen(rp, pen);
     RectFill(rp,
              obj->x - 3,
              obj->y - 3,
@@ -160,32 +167,21 @@ draw_object(struct RastPort *rp, const struct ChaosObject *obj)
 static void
 init_palette(void)
 {
-    /* Simple colourful palette using RGB4 values */
-    UWORD colors[16 * 3];
+    /* LoadRGB4 expects packed 0x0RGB values, one UWORD per colour */
+    UWORD colors[16];
     WORD i;
 
-    for (i = 0; i < 16 * 3; ++i)
-        colors[i] = 0;
+    for (i = 0; i < 16; ++i)
+        colors[i] = 0x000;
 
-    /* Background: dark blue */
-    colors[0 * 3 + 0] = 0x0;
-    colors[0 * 3 + 1] = 0x0;
-    colors[0 * 3 + 2] = 0x3;
-
-    /* Paddles / ball */
-    colors[1 * 3 + 0] = 0xF;
-    colors[1 * 3 + 1] = 0xF;
-    colors[1 * 3 + 2] = 0xF;
-
-    /* Chaos types */
-    colors[2 * 3 + 0] = 0xF; colors[2 * 3 + 1] = 0x0; colors[2 * 3 + 2] = 0x0; /* red */
-    colors[3 * 3 + 0] = 0x0; colors[3 * 3 + 1] = 0xF; colors[3 * 3 + 2] = 0x0; /* green */
-    colors[4 * 3 + 0] = 0x0; colors[4 * 3 + 1] = 0x0; colors[4 * 3 + 2] = 0xF; /* blue */
-    colors[5 * 3 + 0] = 0xF; colors[5 * 3 + 1] = 0xF; colors[5 * 3 + 2] = 0x0; /* yellow */
-
-    /* Score / text */
-    colors[6 * 3 + 0] = 0xF; colors[6 * 3 + 1] = 0x8; colors[6 * 3 + 2] = 0x0; /* orange */
-    colors[7 * 3 + 0] = 0x8; colors[7 * 3 + 1] = 0x0; colors[7 * 3 + 2] = 0xF; /* violet */
+    colors[0] = 0x003;  /* dark blue background */
+    colors[1] = 0xFFF;  /* white - paddles / ball */
+    colors[2] = 0xF00;  /* red - speed up */
+    colors[3] = 0x0F0;  /* green - slow down */
+    colors[4] = 0x00F;  /* blue - angle */
+    colors[5] = 0xFF0;  /* yellow - teleport */
+    colors[6] = 0xF80;  /* orange - score / text */
+    colors[7] = 0x80F;  /* violet */
 
     LoadRGB4(&gameScreen->ViewPort, colors, 16);
 }
@@ -260,21 +256,21 @@ point_in_rect(WORD px, WORD py,
 
 static void
 apply_object_effect(const struct ChaosObject *obj,
-                    float *vx, float *vy, WORD *bx, WORD *by)
+                    LONG *vx, LONG *vy, WORD *bx, WORD *by)
 {
     switch (obj->type) {
     case CHAOS_SPEED_UP:
-        *vx *= 1.25f;
-        *vy *= 1.25f;
+        *vx = (*vx * 5) / 4;       /* 1.25x */
+        *vy = (*vy * 5) / 4;
         break;
     case CHAOS_SLOW_DOWN:
-        *vx *= 0.8f;
-        *vy *= 0.8f;
-        if (*vx > -1.0f && *vx < 1.0f)
-            *vx = (*vx >= 0.f) ? 1.0f : -1.0f;
+        *vx = (*vx * 4) / 5;       /* 0.8x */
+        *vy = (*vy * 4) / 5;
+        if (*vx > -FP_ONE && *vx < FP_ONE)
+            *vx = (*vx >= 0) ? FP_ONE : -FP_ONE;
         break;
     case CHAOS_ANGLE:
-        *vy = -*vy + ((float)rand_range(-2, 2) * 0.3f);
+        *vy = -*vy + (LONG)rand_range(-2, 2) * 77;  /* 77/256 ~ 0.3 */
         break;
     case CHAOS_TELEPORT:
         *bx = rand_range(40, SCREEN_WIDTH - 40);
@@ -306,7 +302,7 @@ draw_intro(struct RastPort *rp, WORD frame)
 
     SetAPen(rp, 6);
     Move(rp, SCREEN_WIDTH / 2 - 80, y + 40);
-    Text(rp, "Press fire to start", 18);
+    Text(rp, "Press fire to start", 19);
 }
 
 static void
@@ -332,7 +328,7 @@ show_winner(struct RastPort *rp, WORD winner)
     }
 
     Move(rp, SCREEN_WIDTH / 2 - 90, SCREEN_HEIGHT / 3 + 40);
-    len = 25;
+    len = 20;
     buf[0] = '\0'; /* silence compiler about buf; we use constant string below */
     Text(rp, "Press fire to return", len);
 }
@@ -400,8 +396,10 @@ play_match(void)
 
     WORD ballX = SCREEN_WIDTH / 2;
     WORD ballY = SCREEN_HEIGHT / 2;
-    float vx = 2.0f;
-    float vy = 1.0f;
+    LONG ballFX = (LONG)(SCREEN_WIDTH / 2) << FP_SHIFT;
+    LONG ballFY = (LONG)(SCREEN_HEIGHT / 2) << FP_SHIFT;
+    LONG vx = 2L << FP_SHIFT;
+    LONG vy = 1L << FP_SHIFT;
 
     WORD scoreLeft = 0;
     WORD scoreRight = 0;
@@ -427,15 +425,19 @@ play_match(void)
             padRightY += PAD_SPEED;
 
         /* Update ball */
-        ballX += (WORD)vx;
-        ballY += (WORD)vy;
+        ballFX += vx;
+        ballFY += vy;
+        ballX = (WORD)(ballFX >> FP_SHIFT);
+        ballY = (WORD)(ballFY >> FP_SHIFT);
 
         /* Bounce off top/bottom */
         if (ballY <= 8) {
             ballY = 8;
+            ballFY = 8L << FP_SHIFT;
             vy = -vy;
         } else if (ballY >= SCREEN_HEIGHT - 8) {
             ballY = SCREEN_HEIGHT - 8;
+            ballFY = (LONG)(SCREEN_HEIGHT - 8) << FP_SHIFT;
             vy = -vy;
         }
 
@@ -446,7 +448,7 @@ play_match(void)
                           PAD_WIDTH, PAD_HEIGHT)) {
             ballX = PAD_MARGIN + PAD_WIDTH + 1;
             vx = (vx < 0) ? -vx : vx;
-            vy += ((float)(ballY - (padLeftY + PAD_HEIGHT / 2))) * 0.05f;
+            vy += (LONG)(ballY - (padLeftY + PAD_HEIGHT / 2)) * 13; /* 13/256 ~ 0.05 */
         }
 
         if (ballX >= SCREEN_WIDTH - PAD_MARGIN - PAD_WIDTH - BALL_SIZE &&
@@ -456,7 +458,7 @@ play_match(void)
                           PAD_WIDTH, PAD_HEIGHT)) {
             ballX = SCREEN_WIDTH - PAD_MARGIN - PAD_WIDTH - BALL_SIZE - 1;
             vx = (vx > 0) ? -vx : vx;
-            vy += ((float)(ballY - (padRightY + PAD_HEIGHT / 2))) * 0.05f;
+            vy += (LONG)(ballY - (padRightY + PAD_HEIGHT / 2)) * 13;
         }
 
         /* Check goal */
@@ -464,15 +466,19 @@ play_match(void)
             scoreRight++;
             ballX = SCREEN_WIDTH / 2;
             ballY = SCREEN_HEIGHT / 2;
-            vx = 2.0f;
-            vy = (rnd() & 1) ? 1.0f : -1.0f;
+            ballFX = (LONG)(SCREEN_WIDTH / 2) << FP_SHIFT;
+            ballFY = (LONG)(SCREEN_HEIGHT / 2) << FP_SHIFT;
+            vx = 2L << FP_SHIFT;
+            vy = (rnd() & 1) ? (1L << FP_SHIFT) : -(1L << FP_SHIFT);
             reset_objects(objs);
         } else if (ballX > SCREEN_WIDTH - BALL_SIZE) {
             scoreLeft++;
             ballX = SCREEN_WIDTH / 2;
             ballY = SCREEN_HEIGHT / 2;
-            vx = -2.0f;
-            vy = (rnd() & 1) ? 1.0f : -1.0f;
+            ballFX = (LONG)(SCREEN_WIDTH / 2) << FP_SHIFT;
+            ballFY = (LONG)(SCREEN_HEIGHT / 2) << FP_SHIFT;
+            vx = -(2L << FP_SHIFT);
+            vy = (rnd() & 1) ? (1L << FP_SHIFT) : -(1L << FP_SHIFT);
             reset_objects(objs);
         }
 
@@ -490,7 +496,12 @@ play_match(void)
                 if (point_in_rect(ballX, ballY,
                                   objs[i].x - 4, objs[i].y - 4,
                                   8, 8)) {
+                    WORD prevBX = ballX, prevBY = ballY;
                     apply_object_effect(&objs[i], &vx, &vy, &ballX, &ballY);
+                    if (ballX != prevBX || ballY != prevBY) {
+                        ballFX = (LONG)ballX << FP_SHIFT;
+                        ballFY = (LONG)ballY << FP_SHIFT;
+                    }
                 }
             }
         }
